@@ -2,26 +2,22 @@
 
 package com.sultanofcardio.models
 
-import java.util.*
-
 /**
  * An email message
  */
-class Email(val subject: String, val body: String, vararg recipients: String) {
+class Email(val from: String, val subject: String, val body: String, recipient: String, vararg otherRecipients: String) {
 
-    val recipients = mutableSetOf(*recipients)
+    val recipients = mutableSetOf(recipient).apply { addAll(otherRecipients) }
     val cc = mutableSetOf<String>()
     var bcc = mutableSetOf<String>()
-    var properties = Properties()
     var attachments = mutableListOf<Attachment>()
-    var noreply = false
+    var replyTo: String? = null
     var personalName: String? = null
+    var contentType: String = TEXT_PLAIN
 
-    var contentType: String
-        get() = properties.getOrDefault("contentType", TEXT_PLAIN) as String
-        set(value) {
-            properties["contentType"] = value
-        }
+    var charset = "UTF-8"
+    var format = "flowed"
+    var contentTransferEncoding = "8bit"
 
     fun addRecipients(vararg recipients: String): Email {
         this.recipients.addAll(recipients)
@@ -45,11 +41,6 @@ class Email(val subject: String, val body: String, vararg recipients: String) {
 
     fun hasAttachment(): Boolean {
         return attachments.size > 0
-    }
-
-    fun addProperty(name: String, property: Any): Email {
-        properties[name] = property
-        return this
     }
 
     fun cc(configure: CC.() -> Unit) {
@@ -79,16 +70,6 @@ class Email(val subject: String, val body: String, vararg recipients: String) {
     class Recipients(private val recipients: MutableSet<String>) {
         operator fun String.unaryPlus() {
             recipients.add(this)
-        }
-    }
-
-    fun <T> property(name: String, defaultValue: T): T {
-        val o: Any? = properties.getProperty(name)
-
-        return try {
-            o as T ?: defaultValue
-        } catch (e: ClassCastException) {
-            defaultValue
         }
     }
 }

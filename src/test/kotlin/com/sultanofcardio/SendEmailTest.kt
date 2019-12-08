@@ -21,15 +21,38 @@ class SendEmailTest {
         server = MailServer(host, port, username, password = password)
     }
 
-
     @Test
     fun send(){
-        server.sendEmail("Test", "Test from mailman", recipient)
+        server.sendEmail(username, "Test", "Test from mailman", recipient)
+    }
+
+    @Test
+    fun sendMultipleRecipients(){
+        server.sendEmail(username, "Test", "Test from mailman", recipient, ccRecipient)
+    }
+
+    @Test
+    fun sendMultipleRecipientsPostConfig(){
+        server.sendEmail(username, "Test", "Test from mailman", recipient) {
+            addRecipients(ccRecipient)
+        }
+    }
+
+    @Test
+    fun sendReplyTo(){
+        server.sendEmail(username, "Test", "Test from mailman", recipient) {
+            replyTo = "someone@example.com"
+        }
+    }
+
+    @Test
+    fun sendAltFrom(){
+        server.sendEmail("someone@example.com", "Test", "Test from mailman", recipient)
     }
 
     @Test
     fun send2(){
-        server.sendEmail("Test", "Test 2 from mailman", recipient) {
+        server.sendEmail(username, "Test", "Test 2 from mailman", recipient) {
             personalName = "Mailman"
 
             cc { +ccRecipient }

@@ -21,7 +21,7 @@ Add the dependency in your pom.xml
 <dependency>
     <groupId>com.sultanofcardio</groupId>
         <artifactId>mailman</artifactId>
-    <version>1.0.0</version>
+    <version>3.0.0</version>
 </dependency>
 ```
 
@@ -32,7 +32,7 @@ repositories {
     maven { url "https://repo.sultanofcardio.com/artifactory/sultanofcardio" }
 }
 
-implementation 'com.sultanofcardio:mailman:1.0.0'
+implementation 'com.sultanofcardio:mailman:3.0.0'
 ``` 
 
 Or build.gradle.kts
@@ -42,7 +42,7 @@ repositories {
     maven { url = URI.create("https://repo.sultanofcardio.com/artifactory/sultanofcardio") }
 }
 
-implementation("com.sultanofcardio:mailman:1.0.0")
+implementation("com.sultanofcardio:mailman:3.0.0")
 ``` 
 
 Configure a mail server
@@ -52,13 +52,13 @@ val server = MailServer(host, port, username, password = password) // Password i
 
 Send an email
 ```kotlin
-val sent: Boolean = server.sendEmail(Email(subject, body, recipient1, recipient2))
+val sent: Boolean = server.sendEmail(Email(from, subject, body, recipient1, recipient2))
 ```
 
 or
 
 ```kotlin
-val sent: Boolean = server.sendEmail(subject, body, recipient) {
+val sent: Boolean = server.sendEmail(from, subject, body, recipient) {
     cc { +ccEmail }
 
     bcc { +bccEmail }

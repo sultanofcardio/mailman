@@ -46,26 +46,25 @@ class MailServer(val host: String, val port: String, val username: String, val p
     }
 
     fun sendEmail(email: Email): Boolean {
+
+        if(email.recipients.size < 1) throw IllegalStateException("Email must have at least one recipient")
+
         if (!init) init()
 
         var success = false
         try {
             val msg = MimeMessage(session)
-            val contentType: String = email.property("contentType", TEXT_PLAIN)
-            val charset = email.property("charset", "UTF-8")
-            val format = email.property("format", "flowed")
-            val contentTransferEncoding = email.property("contentTransferEncoding", "8bit")
 
             //set message headers
-            msg.addHeader("Content-type", contentType)
-            msg.addHeader("format", format)
-            msg.addHeader("Content-Transfer-Encoding", contentTransferEncoding)
+            msg.addHeader("Content-type", email.contentType)
+            msg.addHeader("format", email.format)
+            msg.addHeader("Content-Transfer-Encoding", email.contentTransferEncoding)
 
-            val fromAddr = InternetAddress(username, email.personalName ?: username)
+            val fromAddr = InternetAddress(email.from, email.personalName ?: email.from)
             msg.setFrom(fromAddr)
 
-            if (!email.noreply) msg.replyTo = InternetAddress.parse(username, false)
-            msg.setSubject(email.subject, charset)
+            if (email.replyTo != null) msg.replyTo = InternetAddress.parse(email.replyTo, false)
+            msg.setSubject(email.subject, email.charset)
             msg.sentDate = Date()
 
             msg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(email.recipients.joinToString(","), false))
@@ -75,10 +74,10 @@ class MailServer(val host: String, val port: String, val username: String, val p
             if (email.hasAttachment()) {
                 var body = MimeBodyPart()
                 var content: String = email.body
-                if (contentType == TEXT_HTML) {
+                if (email.contentType == TEXT_HTML) {
                     content = defaultStyle + content
                 }
-                body.setContent(content, contentType)
+                body.setContent(content, email.contentType)
                 val multipart: Multipart = MimeMultipart()
                 multipart.addBodyPart(body)
                 for (attachment in email.attachments) {
@@ -91,7 +90,7 @@ class MailServer(val host: String, val port: String, val username: String, val p
                 }
                 msg.setContent(multipart)
             } else {
-                msg.setContent(email.body, contentType)
+                msg.setContent(email.body, email.contentType)
             }
             Transport.send(msg)
             success = true
@@ -103,8 +102,9 @@ class MailServer(val host: String, val port: String, val username: String, val p
         return success
     }
 
-    fun sendEmail(subject: String, body: String, vararg recipients: String, configure: Email.() -> Unit = {}): Boolean {
-        val email = Email(subject, body, *recipients)
+    fun sendEmail(from: String, subject: String, body: String, recipient: String, vararg otherRecipients: String,
+                  configure: Email.() -> Unit = {}): Boolean {
+        val email = Email(from, subject, body, recipient, *otherRecipients)
         configure(email)
         return sendEmail(email)
     }
