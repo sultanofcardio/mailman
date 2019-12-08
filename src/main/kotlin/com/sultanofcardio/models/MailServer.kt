@@ -14,7 +14,7 @@ import javax.mail.internet.MimeMultipart
 import javax.mail.util.ByteArrayDataSource
 
 class MailServer(val host: String, val port: String, val username: String, val properties: Properties = Properties(),
-                 val password: String? = null, val personalName: String = username) {
+                 val password: String? = null) {
     val secure = password != null
     var init = false
     lateinit var session: Session
@@ -61,7 +61,7 @@ class MailServer(val host: String, val port: String, val username: String, val p
             msg.addHeader("format", format)
             msg.addHeader("Content-Transfer-Encoding", contentTransferEncoding)
 
-            val fromAddr = InternetAddress(username, personalName)
+            val fromAddr = InternetAddress(username, email.personalName ?: username)
             msg.setFrom(fromAddr)
 
             if (!email.noreply) msg.replyTo = InternetAddress.parse(username, false)

@@ -15,6 +15,7 @@ class Email(val subject: String, val body: String, vararg recipients: String) {
     var properties = Properties()
     var attachments = mutableListOf<Attachment>()
     var noreply = false
+    var personalName: String? = null
 
     var contentType: String
         get() = properties.getOrDefault("contentType", TEXT_PLAIN) as String

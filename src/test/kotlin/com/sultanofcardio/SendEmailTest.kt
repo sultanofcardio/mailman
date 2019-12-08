@@ -18,7 +18,7 @@ class SendEmailTest {
     private val server: MailServer
 
     init {
-        server = MailServer(host, port, username, password = password, personalName = "Mailman")
+        server = MailServer(host, port, username, password = password)
     }
 
 
@@ -30,6 +30,8 @@ class SendEmailTest {
     @Test
     fun send2(){
         server.sendEmail("Test", "Test 2 from mailman", recipient) {
+            personalName = "Mailman"
+
             cc { +ccRecipient }
 
             bcc { +bccRecipient }
