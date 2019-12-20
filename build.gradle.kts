@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.sultanofcardio"
-version = "3.0.0"
+version = "3.0.1"
 
 val projectName = "mailman"
 

@@ -32,7 +32,7 @@ repositories {
     maven { url "https://repo.sultanofcardio.com/artifactory/sultanofcardio" }
 }
 
-implementation 'com.sultanofcardio:mailman:3.0.0'
+implementation 'com.sultanofcardio:mailman:3.0.1'
 ``` 
 
 Or build.gradle.kts
@@ -42,7 +42,7 @@ repositories {
     maven { url = URI.create("https://repo.sultanofcardio.com/artifactory/sultanofcardio") }
 }
 
-implementation("com.sultanofcardio:mailman:3.0.0")
+implementation("com.sultanofcardio:mailman:3.0.1")
 ``` 
 
 Configure a mail server
