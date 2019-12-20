@@ -31,10 +31,3 @@ const val TEXT_PLAIN = "text/plain"
 const val PNG = "image/png"
 const val JPEG = "image/jpeg"
 const val GIF = "image/gif"
-
-
-/**
- * Default html email style
- */
-@Language("CSS")
-const val defaultStyle = "table {  font-family: arial, sans-serif;  border-collapse: collapse;  width: 100%;}td, th {  border: 1px solid #dddddd;  text-align: left;  padding: 8px;}tr:nth-child(even) {  background-color: #dddddd;}"

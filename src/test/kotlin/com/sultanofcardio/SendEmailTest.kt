@@ -2,6 +2,7 @@ package com.sultanofcardio
 
 import com.sultanofcardio.models.Attachment
 import com.sultanofcardio.models.MailServer
+import com.sultanofcardio.models.TEXT_HTML
 import com.sultanofcardio.models.TEXT_PLAIN
 import org.junit.Test
 import java.io.File
@@ -58,6 +59,21 @@ class SendEmailTest {
             cc { +ccRecipient }
 
             bcc { +bccRecipient }
+
+            addAttachment(Attachment("README.md", File("README.md").readBytes(), TEXT_PLAIN))
+        }
+    }
+
+    @Test
+    fun sendHTML(){
+        server.sendEmail(username, "HTML Test", "Test HTML from mailman", recipient) {
+            personalName = "Mailman"
+
+            cc { +ccRecipient }
+
+            bcc { +bccRecipient }
+
+            contentType = TEXT_HTML
 
             addAttachment(Attachment("README.md", File("README.md").readBytes(), TEXT_PLAIN))
         }

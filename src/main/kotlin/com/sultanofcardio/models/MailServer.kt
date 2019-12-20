@@ -74,9 +74,6 @@ class MailServer(val host: String, val port: String, val username: String, val p
             if (email.hasAttachment()) {
                 var body = MimeBodyPart()
                 var content: String = email.body
-                if (email.contentType == TEXT_HTML) {
-                    content = defaultStyle + content
-                }
                 body.setContent(content, email.contentType)
                 val multipart: Multipart = MimeMultipart()
                 multipart.addBodyPart(body)
