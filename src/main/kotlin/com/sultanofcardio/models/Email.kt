@@ -5,7 +5,7 @@ package com.sultanofcardio.models
 /**
  * An email message
  */
-class Email(var from: String, val subject: String, val body: String, recipient: String, vararg otherRecipients: String) {
+class Email(var from: String, var subject: String, var body: String, recipient: String, vararg otherRecipients: String) {
 
     val recipients = mutableSetOf(recipient).apply { addAll(otherRecipients) }
     val cc = mutableSetOf<String>()
