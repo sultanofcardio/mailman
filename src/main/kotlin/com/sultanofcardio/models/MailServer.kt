@@ -38,6 +38,7 @@ class MailServer(val host: String, val port: String, val username: String, val p
         if (secure) {
             properties["mail.smtp.socketFactory.class"] = "javax.net.ssl.SSLSocketFactory"
             properties["mail.smtp.auth"] = "true"
+            properties["mail.smtp.starttls.enable"] = "true"
             properties["mail.smtp.socketFactory.port"] = port
         }
 
