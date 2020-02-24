@@ -13,13 +13,17 @@ import javax.mail.internet.MimeMessage
 import javax.mail.internet.MimeMultipart
 import javax.mail.util.ByteArrayDataSource
 
-class MailServer(val host: String, val port: String, val username: String, val properties: Properties = Properties(),
-                 val password: String? = null) {
+class MailServer(
+    host: String,
+    port: String,
+    val username: String,
+    properties: Properties = Properties(),
+    val password: String? = null
+) {
     val secure = password != null
-    var init = false
-    lateinit var session: Session
+    var session: Session
 
-    private fun init() {
+    init {
         session = if (secure) {
             val auth: Authenticator = object : Authenticator() {
                 //override the getPasswordAuthentication method
@@ -41,64 +45,71 @@ class MailServer(val host: String, val port: String, val username: String, val p
             properties["mail.smtp.starttls.enable"] = "true"
             properties["mail.smtp.socketFactory.port"] = port
         }
-
-
-        init = true
     }
 
-    fun sendEmail(email: Email): Boolean {
+    fun sendEmail(vararg emails: Email): Array<Boolean> {
+        val transport = session.transport
+        transport.connect()
+        return Array(emails.size) { i ->
 
-        if(email.recipients.size < 1) throw IllegalStateException("Email must have at least one recipient")
+            val email = emails[i]
+            if(email.recipients.size < 1) throw IllegalStateException("Email must have at least one recipient")
 
-        if (!init) init()
+            var success = false
+            try {
+                val msg = MimeMessage(session)
 
-        var success = false
-        try {
-            val msg = MimeMessage(session)
+                //set message headers
+                msg.addHeader("Content-type", email.contentType)
+                msg.addHeader("format", email.format)
+                msg.addHeader("Content-Transfer-Encoding", email.contentTransferEncoding)
 
-            //set message headers
-            msg.addHeader("Content-type", email.contentType)
-            msg.addHeader("format", email.format)
-            msg.addHeader("Content-Transfer-Encoding", email.contentTransferEncoding)
+                val fromAddr = InternetAddress(email.from, email.personalName ?: email.from)
+                msg.setFrom(fromAddr)
 
-            val fromAddr = InternetAddress(email.from, email.personalName ?: email.from)
-            msg.setFrom(fromAddr)
+                if (email.replyTo != null) msg.replyTo = InternetAddress.parse(email.replyTo, false)
+                msg.setSubject(email.subject, email.charset)
+                msg.sentDate = Date()
 
-            if (email.replyTo != null) msg.replyTo = InternetAddress.parse(email.replyTo, false)
-            msg.setSubject(email.subject, email.charset)
-            msg.sentDate = Date()
+                msg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(email.recipients.joinToString(","), false))
+                msg.setRecipients(Message.RecipientType.CC, InternetAddress.parse(email.cc.joinToString(","), false))
+                msg.setRecipients(Message.RecipientType.BCC, InternetAddress.parse(email.bcc.joinToString(","), false))
 
-            msg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(email.recipients.joinToString(","), false))
-            msg.setRecipients(Message.RecipientType.CC, InternetAddress.parse(email.cc.joinToString(","), false))
-            msg.setRecipients(Message.RecipientType.BCC, InternetAddress.parse(email.bcc.joinToString(","), false))
-
-            if (email.hasAttachment()) {
-                var body = MimeBodyPart()
-                var content: String = email.body
-                body.setContent(content, email.contentType)
-                val multipart: Multipart = MimeMultipart()
-                multipart.addBodyPart(body)
-                for (attachment in email.attachments) {
-                    body = MimeBodyPart()
-                    val source: DataSource =
-                        ByteArrayDataSource(attachment.data, attachment.type)
-                    body.dataHandler = DataHandler(source)
-                    body.fileName = attachment.name
+                if (email.hasAttachment()) {
+                    var body = MimeBodyPart()
+                    val content: String = email.body
+                    body.setContent(content, email.contentType)
+                    val multipart: Multipart = MimeMultipart()
                     multipart.addBodyPart(body)
+                    for (attachment in email.attachments) {
+                        body = MimeBodyPart()
+                        val source: DataSource =
+                            ByteArrayDataSource(attachment.data, attachment.type)
+                        body.dataHandler = DataHandler(source)
+                        body.fileName = attachment.name
+                        multipart.addBodyPart(body)
+                    }
+                    msg.setContent(multipart)
+                } else {
+                    msg.setContent(email.body, email.contentType)
                 }
-                msg.setContent(multipart)
-            } else {
-                msg.setContent(email.body, email.contentType)
+                msg.saveChanges()
+                transport.sendMessage(msg, msg.allRecipients)
+                success = true
+            } catch (e: UnsupportedEncodingException) {
+                e.printStackTrace()
+            } catch (e: MessagingException) {
+                e.printStackTrace()
+            } finally {
+                transport.close()
             }
-            Transport.send(msg)
-            success = true
-        } catch (e: UnsupportedEncodingException) {
-            e.printStackTrace()
-        } catch (e: MessagingException) {
-            e.printStackTrace()
+            success
         }
-        return success
     }
+
+    // To maintain backwards compatibility
+    @Suppress("RemoveRedundantSpreadOperator")
+    fun sendEmail(email: Email): Boolean = sendEmail(*arrayOf(email))[0]
 
     fun sendEmail(from: String, subject: String, body: String, recipient: String, vararg otherRecipients: String,
                   configure: Email.() -> Unit = {}): Boolean {

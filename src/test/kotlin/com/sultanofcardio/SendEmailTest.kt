@@ -1,9 +1,6 @@
 package com.sultanofcardio
 
-import com.sultanofcardio.models.Attachment
-import com.sultanofcardio.models.MailServer
-import com.sultanofcardio.models.TEXT_HTML
-import com.sultanofcardio.models.TEXT_PLAIN
+import com.sultanofcardio.models.*
 import org.junit.Test
 import java.io.File
 
@@ -77,5 +74,20 @@ class SendEmailTest {
 
             addAttachment(Attachment("README.md", File("README.md").readBytes(), TEXT_PLAIN))
         }
+    }
+
+    @Test
+    fun batchSend(){
+        server.sendEmail(*Array(10) {
+            Email(username, "Batch HTML Test",
+                "Batch HTML test from mailman <a href=\"https://kotlinlang.org/\">Kotlin</a> email library",
+                recipient).apply {
+                personalName = "Mailman"
+
+                contentType = TEXT_HTML
+
+                addAttachment(Attachment("README.md", File("README.md").readBytes(), TEXT_PLAIN))
+            }
+        })
     }
 }
