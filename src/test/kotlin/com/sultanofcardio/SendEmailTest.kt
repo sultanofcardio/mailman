@@ -37,6 +37,16 @@ class SendEmailTest {
     }
 
     @Test
+    fun sendBCCOnly(){
+        server.sendEmail(username, "Test", "Test from mailman", "") {
+            bcc {
+                +bccRecipient
+                +bccRecipient
+            }
+        }
+    }
+
+    @Test
     fun sendReplyTo(){
         server.sendEmail(username, "Test", "Test from mailman", recipient) {
             replyTo = "someone@example.com"
@@ -77,9 +87,9 @@ class SendEmailTest {
     }
 
     @Test
-    fun batchSend(){
-        server.sendEmail(*Array(10) {
-            Email(username, "Batch HTML Test",
+    fun batchSend() {
+        server.sendEmail(*Array(25) {
+            Email(username, "Coroutines Batch HTML Test 15",
                 "Batch HTML test from mailman <a href=\"https://kotlinlang.org/\">Kotlin</a> email library",
                 recipient).apply {
                 personalName = "Mailman"
@@ -89,5 +99,28 @@ class SendEmailTest {
                 addAttachment(Attachment("README.md", File("README.md").readBytes(), TEXT_PLAIN))
             }
         })
+    }
+
+    @Test
+    fun batchSend2() {
+
+        val subject = "Coroutines Batch HTML Test 14"
+
+        fun makeEmail(recipient: String, number: Int) = Email(username, subject, "Email $number", recipient)
+            .apply {
+                personalName = "Mailman"
+
+                contentType = TEXT_HTML
+
+                addAttachment(Attachment("README.md", File("README.md").readBytes(), TEXT_PLAIN))
+            }
+
+        val email1 = makeEmail(recipient, 1)
+        val email2 = makeEmail("garbage", 2)
+        val email3 = makeEmail(recipient, 3)
+        val email4 = makeEmail(recipient, 4)
+        val email5 = makeEmail("garbage", 5)
+
+        println(server.sendEmail(email1, email2, email3, email4, email5).joinToString())
     }
 }

@@ -2,7 +2,9 @@
 
 package com.sultanofcardio.models
 
+import kotlinx.coroutines.*
 import java.io.UnsupportedEncodingException
+import java.time.Instant
 import java.util.*
 import javax.activation.DataHandler
 import javax.activation.DataSource
@@ -47,72 +49,86 @@ class MailServer(
         }
     }
 
-    fun sendEmail(vararg emails: Email): Array<Boolean> {
-        val transport = session.transport
-        transport.connect()
-        return Array(emails.size) { i ->
+    fun sendEmail(vararg emails: Email): Array<Boolean> = runBlocking {
+        emails.filter { it.recipients.size > 0 }
+            .map { email ->
+                GlobalScope.async {
+                    val transport = session.transport
+                    transport.connect()
+                    try {
+                        val msg = MimeMessage(session)
 
-            val email = emails[i]
-            if(email.recipients.size < 1) throw IllegalStateException("Email must have at least one recipient")
+                        //set message headers
+                        msg.addHeader("Content-type", email.contentType)
+                        msg.addHeader("format", email.format)
+                        msg.addHeader("Content-Transfer-Encoding", email.contentTransferEncoding)
 
-            var success = false
-            try {
-                val msg = MimeMessage(session)
+                        val fromAddr = InternetAddress(email.from, email.personalName ?: email.from)
+                        msg.setFrom(fromAddr)
 
-                //set message headers
-                msg.addHeader("Content-type", email.contentType)
-                msg.addHeader("format", email.format)
-                msg.addHeader("Content-Transfer-Encoding", email.contentTransferEncoding)
+                        if (email.replyTo != null) msg.replyTo = InternetAddress.parse(email.replyTo, false)
+                        msg.setSubject(email.subject, email.charset)
+                        msg.sentDate = Date()
 
-                val fromAddr = InternetAddress(email.from, email.personalName ?: email.from)
-                msg.setFrom(fromAddr)
+                        msg.setRecipients(
+                            Message.RecipientType.TO,
+                            InternetAddress.parse(email.recipients.joinToString(","), false)
+                        )
+                        msg.setRecipients(
+                            Message.RecipientType.CC,
+                            InternetAddress.parse(email.cc.joinToString(","), false)
+                        )
+                        msg.setRecipients(
+                            Message.RecipientType.BCC,
+                            InternetAddress.parse(email.bcc.joinToString(","), false)
+                        )
 
-                if (email.replyTo != null) msg.replyTo = InternetAddress.parse(email.replyTo, false)
-                msg.setSubject(email.subject, email.charset)
-                msg.sentDate = Date()
-
-                msg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(email.recipients.joinToString(","), false))
-                msg.setRecipients(Message.RecipientType.CC, InternetAddress.parse(email.cc.joinToString(","), false))
-                msg.setRecipients(Message.RecipientType.BCC, InternetAddress.parse(email.bcc.joinToString(","), false))
-
-                if (email.hasAttachment()) {
-                    var body = MimeBodyPart()
-                    val content: String = email.body
-                    body.setContent(content, email.contentType)
-                    val multipart: Multipart = MimeMultipart()
-                    multipart.addBodyPart(body)
-                    for (attachment in email.attachments) {
-                        body = MimeBodyPart()
-                        val source: DataSource =
-                            ByteArrayDataSource(attachment.data, attachment.type)
-                        body.dataHandler = DataHandler(source)
-                        body.fileName = attachment.name
-                        multipart.addBodyPart(body)
+                        if (email.hasAttachment()) {
+                            var body = MimeBodyPart()
+                            val content: String = email.body
+                            body.setContent(content, email.contentType)
+                            val multipart: Multipart = MimeMultipart()
+                            multipart.addBodyPart(body)
+                            for (attachment in email.attachments) {
+                                body = MimeBodyPart()
+                                val source: DataSource =
+                                    ByteArrayDataSource(attachment.data, attachment.type)
+                                body.dataHandler = DataHandler(source)
+                                body.fileName = attachment.name
+                                multipart.addBodyPart(body)
+                            }
+                            msg.setContent(multipart)
+                        } else {
+                            msg.setContent(email.body, email.contentType)
+                        }
+                        msg.saveChanges()
+                        if (!transport.isConnected) throw IllegalStateException("Not connected")
+                        transport.sendMessage(msg, msg.allRecipients)
+                        true
+                    } catch (e: UnsupportedEncodingException) {
+                        e.printStackTrace()
+                        false
+                    } catch (e: MessagingException) {
+                        e.printStackTrace()
+                        false
+                    } finally {
+                        if (transport.isConnected) transport.close()
                     }
-                    msg.setContent(multipart)
-                } else {
-                    msg.setContent(email.body, email.contentType)
                 }
-                msg.saveChanges()
-                transport.sendMessage(msg, msg.allRecipients)
-                success = true
-            } catch (e: UnsupportedEncodingException) {
-                e.printStackTrace()
-            } catch (e: MessagingException) {
-                e.printStackTrace()
-            } finally {
-                transport.close()
-            }
-            success
-        }
+            }.map { it.await() }
+            .toTypedArray()
     }
+
+    val time: Instant get() = Instant.now()
 
     // To maintain backwards compatibility
     @Suppress("RemoveRedundantSpreadOperator")
     fun sendEmail(email: Email): Boolean = sendEmail(*arrayOf(email))[0]
 
-    fun sendEmail(from: String, subject: String, body: String, recipient: String, vararg otherRecipients: String,
-                  configure: Email.() -> Unit = {}): Boolean {
+    fun sendEmail(
+        from: String, subject: String, body: String, recipient: String, vararg otherRecipients: String,
+        configure: Email.() -> Unit = {}
+    ): Boolean {
         val email = Email(from, subject, body, recipient, *otherRecipients)
         configure(email)
         return sendEmail(email)

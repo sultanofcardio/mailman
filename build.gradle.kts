@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.sultanofcardio"
-version = "3.1.1"
+version = "3.1.2"
 
 val projectName = "mailman"
 
@@ -24,6 +24,7 @@ dependencies {
     implementation(kotlin("stdlib-jdk8"))
     implementation("javax.mail:javax.mail-api:1.6.2")
     implementation("com.sun.mail:javax.mail:1.6.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.3")
     testImplementation(group = "junit", name = "junit", version = "4.12")
 }
 

@@ -21,7 +21,7 @@ Add the dependency in your pom.xml
 <dependency>
     <groupId>com.sultanofcardio</groupId>
         <artifactId>mailman</artifactId>
-    <version>3.1.1</version>
+    <version>3.1.2</version>
 </dependency>
 ```
 
@@ -32,7 +32,7 @@ repositories {
     maven { url "https://repo.sultanofcardio.com/artifactory/sultanofcardio" }
 }
 
-implementation 'com.sultanofcardio:mailman:3.1.1'
+implementation 'com.sultanofcardio:mailman:3.1.2'
 ``` 
 
 Or build.gradle.kts
@@ -42,7 +42,7 @@ repositories {
     maven { url = URI.create("https://repo.sultanofcardio.com/artifactory/sultanofcardio") }
 }
 
-implementation("com.sultanofcardio:mailman:3.1.1")
+implementation("com.sultanofcardio:mailman:3.1.2")
 ``` 
 
 Configure a mail server
